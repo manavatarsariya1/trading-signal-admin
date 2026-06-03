@@ -1,12 +1,8 @@
+import { RouterProvider } from 'react-router-dom'
+import AppRoutes from './routes/AppRoutes'
 
 function App() {
-
-
-  return (
-    <>
-      <h1 className="text-5xl text-red-50">Vite + React</h1>
-    </>
-  )
+  return <RouterProvider router={AppRoutes} />
 }
 
 export default App

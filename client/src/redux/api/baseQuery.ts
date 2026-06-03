@@ -1,0 +1,105 @@
+import {
+  type BaseQueryFn,
+  type FetchArgs,
+  type FetchBaseQueryError,
+  fetchBaseQuery,
+} from '@reduxjs/toolkit/query'
+import { clearAccessToken, getAccessToken, setAccessToken } from '../../lib/authStorage'
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
+
+type ApiWrapper<T> = {
+  success: boolean
+  message: string
+  data?: T
+  errors?: Record<string, string[] | undefined>
+}
+
+type QueryError = {
+  status: number | 'FETCH_ERROR' | 'CUSTOM_ERROR'
+  data: { message: string; errors?: Record<string, string[] | undefined> }
+}
+
+const rawBaseQuery = fetchBaseQuery({
+  baseUrl: API_BASE,
+  credentials: 'include',
+  prepareHeaders: (headers) => {
+    const token = getAccessToken()
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`)
+    }
+    return headers
+  },
+})
+
+function unwrapResponse<T>(result: { data?: unknown; error?: FetchBaseQueryError }): {
+  data?: T
+  error?: QueryError
+} {
+  if (result.error) {
+    const status = result.error.status === 'FETCH_ERROR' ? 0 : Number(result.error.status)
+    const payload = result.error.data as ApiWrapper<unknown> | undefined
+    return {
+      error: {
+        status,
+        data: {
+          message: payload?.message ?? 'Request failed',
+          errors: payload?.errors,
+        },
+      },
+    }
+  }
+
+  const wrapper = result.data as ApiWrapper<T> | undefined
+  if (!wrapper || !wrapper.success) {
+    return {
+      error: {
+        status: 400,
+        data: {
+          message: wrapper?.message ?? 'Request failed',
+          errors: wrapper?.errors,
+        },
+      },
+    }
+  }
+
+  return { data: wrapper.data as T }
+}
+
+export const baseQueryWithAuth: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  QueryError
+> = async (args, api, extraOptions) => {
+  let result = await rawBaseQuery(args, api, extraOptions)
+  let unwrapped = unwrapResponse(result)
+
+  const isAuthRequest =
+    typeof args === 'string'
+      ? args.includes('/auth/login') || args.includes('/auth/refresh')
+      : String(args.url).includes('/auth/login') || String(args.url).includes('/auth/refresh')
+
+  if (unwrapped.error?.status === 401 && !isAuthRequest && getAccessToken()) {
+    const refresh = await rawBaseQuery(
+      { url: '/auth/refresh', method: 'POST' },
+      api,
+      extraOptions,
+    )
+    const refreshData = unwrapResponse<{ accessToken: string }>(refresh)
+
+    if (refreshData.data?.accessToken) {
+      const rememberMe = Boolean(localStorage.getItem('tsai.accessToken.remember'))
+      setAccessToken(refreshData.data.accessToken, rememberMe)
+      result = await rawBaseQuery(args, api, extraOptions)
+      unwrapped = unwrapResponse(result)
+    } else {
+      clearAccessToken()
+    }
+  }
+
+  if (unwrapped.error) {
+    return { error: unwrapped.error }
+  }
+
+  return { data: unwrapped.data }
+}

@@ -1,9 +1,15 @@
-import type { Request } from 'express'
+export {}
 
-/**
- * Extend Express Request when you add auth, e.g.:
- * export interface AuthenticatedRequest extends Request {
- *   user: { id: string; role: string }
- * }
- */
-export type AppRequest = Request
+declare global {
+  namespace Express {
+    interface UserPayload {
+      id: string
+      email: string
+      role: string
+    }
+
+    interface Request {
+      user?: UserPayload
+    }
+  }
+}

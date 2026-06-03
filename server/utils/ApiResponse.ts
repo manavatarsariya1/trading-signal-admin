@@ -1,20 +1,13 @@
 import type { Response } from 'express'
-import { HttpStatus } from '../constants/httpStatus.js'
+import { sendError, sendSuccess } from './sendResponse.js'
 
-type ApiResponseBody<T> = {
-  success: boolean
-  message: string
-  data?: T
-}
-
+/** @deprecated Prefer sendSuccess / sendError from sendResponse.ts */
 export class ApiResponse {
-  static success<T>(res: Response, data: T, message = 'Success', statusCode = HttpStatus.OK) {
-    const body: ApiResponseBody<T> = { success: true, message, data }
-    return res.status(statusCode).json(body)
+  static success<T>(res: Response, data: T, message = 'Success', statusCode: number = 200) {
+    sendSuccess(res, data, message, statusCode)
   }
 
-  static error(res: Response, message: string, statusCode = HttpStatus.INTERNAL_SERVER_ERROR) {
-    const body: ApiResponseBody<undefined> = { success: false, message }
-    return res.status(statusCode).json(body)
+  static error(res: Response, message: string, statusCode: number = 500) {
+    sendError(res, message, statusCode)
   }
 }

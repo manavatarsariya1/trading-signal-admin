@@ -1,17 +1,20 @@
 import app from './app.js'
-import { connectDatabase, env } from './config/index.js'
-import { logger } from './utils/logger.js'
+import { connectDatabase } from './config/database.js'
+import { env } from './config/env.js'
+import { ensureDefaultAdmin } from './services/auth.service.js'
 
 async function bootstrap() {
   await connectDatabase()
+  await ensureDefaultAdmin()
 
   app.listen(env.PORT, () => {
-    logger.info(`Server listening on http://localhost:${env.PORT}`)
-    logger.info(`Health check: http://localhost:${env.PORT}/api/health`)
+    console.log(`Server listening on http://localhost:${env.PORT}`)
+    console.log(`Health: http://localhost:${env.PORT}/api/health`)
+    console.log(`Default admin: ${env.ADMIN_EMAIL}`)
   })
 }
 
 bootstrap().catch((err) => {
-  logger.error('Failed to start server', err)
+  console.error('Failed to start server:', err)
   process.exit(1)
 })

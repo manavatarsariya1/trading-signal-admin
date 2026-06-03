@@ -4,6 +4,7 @@ import { env } from '../config/env.js'
 import { HttpStatus } from '../constants/httpStatus.js'
 import { AppError } from '../utils/AppError.js'
 import { logger } from '../utils/logger.js'
+import { sendError } from '../utils/sendResponse.js'
 
 export function errorHandler(
   err: unknown,
@@ -12,26 +13,20 @@ export function errorHandler(
   _next: NextFunction,
 ): void {
   if (err instanceof ZodError) {
-    res.status(HttpStatus.BAD_REQUEST).json({
-      success: false,
-      message: 'Validation failed',
-      errors: err.flatten().fieldErrors,
-    })
+    sendError(res, 'Validation failed', HttpStatus.BAD_REQUEST, err.flatten().fieldErrors)
     return
   }
 
   if (err instanceof AppError) {
-    res.status(err.statusCode).json({
-      success: false,
-      message: err.message,
-    })
+    sendError(res, err.message, err.statusCode)
     return
   }
 
   logger.error('Unhandled error', err)
 
-  res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-    success: false,
-    message: env.NODE_ENV === 'production' ? 'Internal server error' : String(err),
-  })
+  sendError(
+    res,
+    env.NODE_ENV === 'production' ? 'Internal server error' : String(err),
+    HttpStatus.INTERNAL_SERVER_ERROR,
+  )
 }

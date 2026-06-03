@@ -1,3 +1,1 @@
-// App routes placeholder
-
-export {}
+export { default as AppRoutes } from './AppRoutes'

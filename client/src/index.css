@@ -1,8 +1,67 @@
 @import "tailwindcss";
 
+/* Brand palette from https://www.tradingsignals.ai/ */
+@theme {
+  --color-tsai-bg: #010b24;
+  --color-tsai-surface: #02081e;
+  --color-tsai-surface-deep: #02164b;
+  --color-tsai-card: #0b1736;
+  --color-tsai-card-dark: #0a1124;
+  --color-tsai-accent: #123dff;
+  --color-tsai-accent-cyan: #12d7f5;
+  --color-tsai-accent-deep: #0012b8;
+  --color-tsai-text: #f9f9f9;
+  --color-tsai-muted: #c7ccd2;
+  --color-tsai-subtle: #adb1b8;
+  --color-tsai-border: rgb(255 255 255 / 0.08);
+  --color-tsai-glass: rgb(255 255 255 / 0.05);
+}
 
-html, body {
+html,
+body,
+#root {
   margin: 0;
-  padding: 0;
-  background: black
+  min-height: 100%;
+  background-color: var(--color-tsai-bg);
+  color: var(--color-tsai-text);
+}
+
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Smooth anchor-style sections on marketing pages */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* react-data-table-component — Trading Signals AI theme */
+.tsai-data-table .rdt_Pagination select {
+  background-color: #02081e;
+  color: #c7ccd2;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 4px 8px;
+  margin: 0 8px;
+}
+
+.tsai-data-table .rdt_Pagination span {
+  color: #adb1b8;
+  font-size: 13px;
+}
+
+.tsai-data-table .rdt_Pagination button:hover:not(:disabled) {
+  background-color: rgba(18, 61, 255, 0.35) !important;
+}
+
+.tsai-data-table .rdt_Pagination button:disabled {
+  opacity: 0.4;
 }

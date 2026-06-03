@@ -27,6 +27,8 @@ npm run build    # compile to dist/
 npm start        # run compiled output
 ```
 
+Use `DB_URI` in your `.env` file for the MongoDB connection string.
+
 ## API
 
 - `GET /api/health` — health check
