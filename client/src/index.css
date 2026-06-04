@@ -43,25 +43,7 @@ body {
   }
 }
 
-/* react-data-table-component — Trading Signals AI theme */
-.tsai-data-table .rdt_Pagination select {
-  background-color: #02081e;
-  color: #c7ccd2;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 4px 8px;
-  margin: 0 8px;
-}
-
-.tsai-data-table .rdt_Pagination span {
-  color: #adb1b8;
-  font-size: 13px;
-}
-
-.tsai-data-table .rdt_Pagination button:hover:not(:disabled) {
-  background-color: rgba(18, 61, 255, 0.35) !important;
-}
-
-.tsai-data-table .rdt_Pagination button:disabled {
-  opacity: 0.4;
+/* react-data-table-component — custom pagination lives inside .rdt_Pagination */
+.tsai-data-table .rdt_Pagination {
+  background: transparent !important;
 }

@@ -15,8 +15,9 @@ export function getApiErrorMessage(
   if (typeof error === 'object' && error !== null && 'status' in error) {
     const fetchError = error as FetchBaseQueryError
     if (fetchError.data && typeof fetchError.data === 'object') {
-      const data = fetchError.data as ApiErrorPayload
+      const data = fetchError.data as ApiErrorPayload & { error?: string }
       if (data.message) return data.message
+      if (data.error) return data.error
     }
     if (fetchError.status === 0 || fetchError.status === 'FETCH_ERROR') {
       return 'Unable to reach the API server. Make sure the backend is running.'

@@ -1,26 +1,20 @@
 import { useMemo, useState } from 'react'
 import DataTable, { type TableColumn } from 'react-data-table-component'
-import { mockBlogs } from '../data/mockBlogs'
+import BlogCoverCell from '../components/blogs/BlogCoverCell'
+import BlogTableActions from '../components/blogs/BlogTableActions'
+import BlogTablePagination from '../components/blogs/BlogTablePagination'
+import { useGetBlogsQuery } from '../redux/api/blogsApi'
 import { tsaiDataTableStyles } from '../styles/dataTableTheme'
-import type { Blog, BlogStatus } from '../types/blog'
-
-const statusStyles: Record<BlogStatus, string> = {
-  Published: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
-  Draft: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
-  Archived: 'border-white/15 bg-white/5 text-tsai-subtle',
-}
-
-function StatusBadge({ status }: { status: BlogStatus }) {
-  return (
-    <span
-      className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusStyles[status]}`}
-    >
-      {status}
-    </span>
-  )
-}
+import { getApiErrorMessage } from '../utils/apiError'
+import type { Blog } from '../types/blog'
 
 const columns: TableColumn<Blog>[] = [
+  {
+    name: 'Cover',
+    width: '96px',
+    cell: (row) => <BlogCoverCell title={row.title} coverImage={row.coverImage} />,
+    ignoreRowClick: true,
+  },
   {
     name: 'Title',
     selector: (row) => row.title,
@@ -34,80 +28,62 @@ const columns: TableColumn<Blog>[] = [
     ),
   },
   {
-    name: 'Author',
-    selector: (row) => row.author,
+    name: 'Created',
+    selector: (row) => row.createdAt,
     sortable: true,
+    width: '170px',
   },
   {
-    name: 'Category',
-    selector: (row) => row.category,
+    name: 'Updated',
+    selector: (row) => row.updatedAt,
     sortable: true,
-    cell: (row) => (
-      <span className="rounded-md border border-white/8 bg-white/5 px-2 py-0.5 text-xs text-tsai-muted">
-        {row.category}
-      </span>
-    ),
-  },
-  {
-    name: 'Status',
-    selector: (row) => row.status,
-    sortable: true,
-    cell: (row) => <StatusBadge status={row.status} />,
-  },
-  {
-    name: 'Published',
-    selector: (row) => row.publishedAt,
-    sortable: true,
-    width: '120px',
-  },
-  {
-    name: 'Views',
-    selector: (row) => row.views,
-    sortable: true,
-    right: true,
-    width: '100px',
-    cell: (row) => (
-      <span className="font-medium text-tsai-text">
-        {row.views > 0 ? row.views.toLocaleString() : '—'}
-      </span>
-    ),
+    width: '170px',
   },
   {
     name: 'Actions',
-    cell: () => (
-      <button
-        type="button"
-        className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-tsai-accent-cyan transition hover:border-tsai-accent-cyan/40 hover:bg-tsai-accent/10"
-      >
-        View
-      </button>
-    ),
+    cell: (row) => <BlogTableActions blog={row} />,
     ignoreRowClick: true,
     allowOverflow: true,
     button: true,
-    width: '100px',
+    width: '240px',
   },
 ]
 
+function TableSkeleton() {
+  return (
+    <div className="space-y-3 p-6">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div
+          key={i}
+          className="h-16 animate-pulse rounded-xl border border-white/5 bg-white/5"
+        />
+      ))}
+    </div>
+  )
+}
+
 export default function AllBlogs() {
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(10)
   const [filterText, setFilterText] = useState('')
+
+  const { data, isLoading, isFetching, isError, error, refetch } = useGetBlogsQuery({
+    page,
+    limit: perPage,
+  })
+
+  const blogs = data?.blogs ?? []
+  const total = data?.total ?? 0
 
   const filteredBlogs = useMemo(() => {
     const query = filterText.trim().toLowerCase()
-    if (!query) return mockBlogs
+    if (!query) return blogs
 
-    return mockBlogs.filter(
+    return blogs.filter(
       (blog) =>
-        blog.title.toLowerCase().includes(query) ||
-        blog.author.toLowerCase().includes(query) ||
-        blog.category.toLowerCase().includes(query) ||
-        blog.status.toLowerCase().includes(query) ||
-        blog.slug.toLowerCase().includes(query),
+        blog.title.toLowerCase().includes(query) || blog.slug.toLowerCase().includes(query),
     )
-  }, [filterText])
-
-  const publishedCount = mockBlogs.filter((b) => b.status === 'Published').length
-  const draftCount = mockBlogs.filter((b) => b.status === 'Draft').length
+  }, [blogs, filterText])
 
   return (
     <div className="space-y-6">
@@ -120,21 +96,41 @@ export default function AllBlogs() {
             All Blogs
           </h2>
           <p className="mt-2 text-sm text-tsai-muted">
-            Review and manage blog posts — static preview until API is connected.
+            Cover image, title, dates, and quick actions for each post.
           </p>
         </div>
-        <div className="flex flex-wrap gap-3 text-sm">
-          <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-emerald-400">
-            {publishedCount} published
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-tsai-muted">
+            {total} total posts
           </span>
-          <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1 text-amber-300">
-            {draftCount} drafts
-          </span>
-          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-tsai-muted">
-            {mockBlogs.length} total
-          </span>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-tsai-muted transition hover:border-tsai-accent-cyan/40 hover:text-tsai-text disabled:opacity-50"
+          >
+            {isFetching ? 'Refreshing…' : 'Refresh'}
+          </button>
         </div>
       </section>
+
+      {isError ? (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-6 py-8 text-center">
+          <p className="font-medium text-red-200">Failed to load blogs</p>
+          <p className="mt-2 text-sm text-red-200/80">{getApiErrorMessage(error)}</p>
+          <p className="mt-3 text-xs text-tsai-subtle">
+            Ensure Next.js is running on{' '}
+            <code className="text-tsai-accent-cyan">http://localhost:3001</code>
+          </p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="mt-4 rounded-lg bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/15"
+          >
+            Try again
+          </button>
+        </div>
+      ) : null}
 
       <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#00000033] backdrop-blur-md">
         <div className="flex flex-col gap-4 border-b border-white/8 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
@@ -154,37 +150,49 @@ export default function AllBlogs() {
             </svg>
             <input
               type="search"
-              placeholder="Search blogs by title, author, category..."
+              placeholder="Search by title or slug…"
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
               className="w-full rounded-xl border border-white/10 bg-tsai-surface/80 py-2.5 pr-4 pl-10 text-sm text-tsai-text outline-none transition placeholder:text-tsai-subtle focus:border-tsai-accent-cyan/50"
             />
           </div>
-          <p className="text-xs text-tsai-subtle">
-            Showing {filteredBlogs.length} of {mockBlogs.length} posts
-          </p>
+          {!isLoading ? (
+            <p className="text-xs text-tsai-subtle">
+              Page {data?.page ?? page} · {filteredBlogs.length} shown
+            </p>
+          ) : null}
         </div>
 
-        <div className="tsai-data-table px-2 pb-2 sm:px-4">
-          <DataTable
-            columns={columns}
-            data={filteredBlogs}
-            pagination
-            paginationPerPage={5}
-            paginationRowsPerPageOptions={[5, 10, 15, 20]}
-            highlightOnHover
-            responsive
-            striped={false}
-            customStyles={tsaiDataTableStyles}
-            noDataComponent={
-              <p className="py-12 text-sm text-tsai-muted">No blogs match your search.</p>
-            }
-            paginationComponentOptions={{
-              rowsPerPageText: 'Rows per page:',
-              rangeSeparatorText: 'of',
-              selectAllRowsItem: false,
-            }}
-          />
+        <div className="tsai-data-table">
+          {isLoading ? (
+            <TableSkeleton />
+          ) : (
+            <DataTable
+              columns={columns}
+              data={filteredBlogs}
+              progressPending={isFetching && !isLoading}
+              pagination
+              paginationServer
+              paginationTotalRows={total}
+              paginationDefaultPage={page}
+              paginationPerPage={perPage}
+              paginationComponent={BlogTablePagination}
+              onChangePage={setPage}
+              onChangeRowsPerPage={(newPerPage, newPage) => {
+                setPerPage(newPerPage)
+                setPage(newPage)
+              }}
+              highlightOnHover
+              responsive
+              striped={false}
+              customStyles={tsaiDataTableStyles}
+              noDataComponent={
+                <p className="py-12 text-sm text-tsai-muted">
+                  {filterText ? 'No blogs match your search on this page.' : 'No blogs found.'}
+                </p>
+              }
+            />
+          )}
         </div>
       </section>
     </div>

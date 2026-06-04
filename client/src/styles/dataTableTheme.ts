@@ -34,7 +34,7 @@ export const tsaiDataTableStyles: TableStyles = {
     style: {
       backgroundColor: 'transparent',
       borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-      minHeight: '56px',
+      minHeight: '72px',
       cursor: 'default',
     },
     highlightOnHoverStyle: {
@@ -53,22 +53,10 @@ export const tsaiDataTableStyles: TableStyles = {
   },
   pagination: {
     style: {
-      backgroundColor: 'rgba(2, 8, 30, 0.8)',
-      borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+      backgroundColor: 'transparent',
+      borderTop: 'none',
       color: '#c7ccd2',
-      minHeight: '52px',
-    },
-    pageButtonsStyle: {
-      borderRadius: '8px',
-      height: '36px',
-      width: '36px',
-      padding: '4px',
-      margin: '0 4px',
-      cursor: 'pointer',
-      transition: '0.2s',
-      color: '#c7ccd2',
-      fill: '#c7ccd2',
-      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      minHeight: '0',
     },
   },
   noData: {

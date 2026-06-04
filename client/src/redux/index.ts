@@ -9,3 +9,4 @@ export {
   useForgotPasswordMutation,
   useResetPasswordMutation,
 } from './api/authApi'
+export { blogsApi, useGetBlogsQuery, useLazyGetBlogsQuery } from './api/blogsApi'
