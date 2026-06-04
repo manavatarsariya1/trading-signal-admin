@@ -1,4 +1,4 @@
-/** Raw document from Next.js GET /api/blogs */
+/** Raw blog document from admin API GET /api/blogs */
 export type ApiBlogDocument = {
   _id?: string
   id?: string

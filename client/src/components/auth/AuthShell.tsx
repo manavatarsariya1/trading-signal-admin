@@ -42,6 +42,7 @@ export const authInputClass =
   'w-full rounded-lg border border-tsai-border bg-tsai-surface/80 px-4 py-3 text-tsai-text outline-none transition placeholder:text-tsai-subtle focus:border-tsai-accent-cyan/60'
 
 export const authButtonClass =
-  'w-full rounded-lg bg-linear-to-r from-tsai-accent to-tsai-accent-cyan py-3 font-medium text-white shadow-[0_8px_32px_rgba(18,61,255,0.35)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
+  'w-full cursor-pointer rounded-lg bg-linear-to-r from-tsai-accent to-tsai-accent-cyan py-3 font-medium text-white shadow-[0_8px_32px_rgba(18,61,255,0.35)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
 
-export const authLinkClass = 'text-sm font-medium text-tsai-accent-cyan hover:underline'
+export const authLinkClass =
+  'cursor-pointer text-sm font-medium text-tsai-accent-cyan hover:underline'

@@ -8,6 +8,8 @@ import {
   signRefreshToken,
   verifyRefreshToken,
 } from '../utils/token.js'
+import { sendPasswordResetEmail, isBrevoConfigured } from './email.service.js'
+import { logger } from '../utils/logger.js'
 
 function toPublicUser(user: { _id: unknown; name: string; email: string; role: string }) {
   return {
@@ -80,7 +82,11 @@ export async function requestPasswordReset(email: string) {
   const message = 'If that email exists, a reset link has been sent.'
 
   if (!user) {
-    return { message }
+    logger.warn(`[auth] Password reset requested for unknown email: ${email}`)
+    return {
+      message,
+      ...(env.NODE_ENV === 'development' ? { userFound: false, emailSent: false } : {}),
+    }
   }
 
   const resetToken = createPasswordResetToken()
@@ -88,15 +94,32 @@ export async function requestPasswordReset(email: string) {
   user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000)
   await user.save({ validateBeforeSave: false })
 
-  const resetUrl = `${env.CLIENT_URL}/reset-password?token=${resetToken}`
+  const resetUrl = `${env.CLIENT_URL}/reset-password?token=${encodeURIComponent(resetToken)}`
 
-  if (env.NODE_ENV === 'development') {
-    console.log(`[auth] Password reset link: ${resetUrl}`)
+  let emailSent = false
+  try {
+    emailSent = await sendPasswordResetEmail(user.email, resetUrl, user.name)
+  } catch (error) {
+    logger.error('[auth] Failed to send password reset email', error)
+    if (env.NODE_ENV === 'production') {
+      // Still return generic success (do not reveal whether email exists or send failed)
+      return { message }
+    }
+    throw new AppError(
+      'Unable to send reset email. Check Brevo configuration and sender verification.',
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    )
+  }
+
+  if (!emailSent && env.NODE_ENV === 'development') {
+    console.log(`[auth] Password reset link (Brevo not configured): ${resetUrl}`)
   }
 
   return {
     message,
-    ...(env.NODE_ENV === 'development' ? { resetUrl } : {}),
+    ...(env.NODE_ENV === 'development'
+      ? { resetUrl, emailSent, userFound: true, brevoConfigured: isBrevoConfigured() }
+      : {}),
   }
 }
 

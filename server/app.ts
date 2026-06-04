@@ -2,6 +2,7 @@ import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express from 'express'
 import helmet from 'helmet'
+import path from 'path'
 import { env } from './config/env.js'
 import { errorHandler } from './middlewares/errorHandler.js'
 import { notFound } from './middlewares/notFound.js'
@@ -14,6 +15,7 @@ app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }))
 app.use(cookieParser())
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
+app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')))
 
 app.get('/', (_req, res) => {
   res.json({ success: true, message: 'Trading Signal Admin API' })

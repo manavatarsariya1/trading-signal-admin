@@ -59,7 +59,13 @@ export const authApi = createApi({
     }),
 
     forgotPassword: builder.mutation<
-      { message: string; resetUrl?: string },
+      {
+        message: string
+        resetUrl?: string
+        emailSent?: boolean
+        userFound?: boolean
+        brevoConfigured?: boolean
+      },
       { email: string }
     >({
       query: (body) => ({

@@ -1,28 +1,35 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import type { BlogsListResponse, BlogsListResult } from '../../types/blog'
+import { createApi } from '@reduxjs/toolkit/query/react'
+import type { BlogsListResult } from '../../types/blog'
 import { mapBlogsListResponse } from '../../utils/mapBlog'
-
-const BLOGS_API_BASE = import.meta.env.VITE_BLOGS_API_BASE_URL ?? '/blogs-api'
+import { baseQueryWithAuth } from './baseQuery'
 
 export type GetBlogsParams = {
   page?: number
   limit?: number
+  /** Server-side filter on title and slug */
+  search?: string
 }
 
 export const blogsApi = createApi({
   reducerPath: 'blogsApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: BLOGS_API_BASE,
-  }),
+  baseQuery: baseQueryWithAuth,
   tagTypes: ['Blogs'],
   endpoints: (builder) => ({
     getBlogs: builder.query<BlogsListResult, GetBlogsParams | void>({
       query: (params) => {
         const page = params?.page ?? 1
         const limit = params?.limit ?? 12
-        return `/blogs?page=${page}&limit=${limit}`
+        const query = new URLSearchParams({
+          page: String(page),
+          limit: String(limit),
+        })
+        const search = params?.search?.trim()
+        if (search) {
+          query.set('search', search)
+        }
+        return `/blogs?${query.toString()}`
       },
-      transformResponse: (response: BlogsListResponse) => mapBlogsListResponse(response),
+      transformResponse: mapBlogsListResponse,
       providesTags: (result) =>
         result
           ? [
@@ -31,7 +38,18 @@ export const blogsApi = createApi({
             ]
           : [{ type: 'Blogs', id: 'LIST' }],
     }),
+    deleteBlog: builder.mutation<{ message: string }, string>({
+      query: (id) => ({
+        url: `/blogs/${id}`,
+        method: 'DELETE',
+      }),
+      transformResponse: (response: { message: string }) => response,
+      invalidatesTags: (_result, _error, id) => [
+        { type: 'Blogs', id },
+        { type: 'Blogs', id: 'LIST' },
+      ],
+    }),
   }),
 })
 
-export const { useGetBlogsQuery, useLazyGetBlogsQuery } = blogsApi
+export const { useGetBlogsQuery, useLazyGetBlogsQuery, useDeleteBlogMutation } = blogsApi

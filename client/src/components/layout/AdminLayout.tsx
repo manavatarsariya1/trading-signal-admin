@@ -1,8 +1,16 @@
-import { Outlet } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from '../common/Sidebar'
 import Header from '../Header'
 
 export default function AdminLayout() {
+  const { pathname } = useLocation()
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+
+  useEffect(() => {
+    setMobileNavOpen(false)
+  }, [pathname])
+
   return (
     <div className="relative flex min-h-screen overflow-hidden bg-tsai-bg text-tsai-text">
       {/* Ambient background — matches tradingsignals.ai hero */}
@@ -26,12 +34,15 @@ export default function AdminLayout() {
         aria-hidden
       />
 
-      <Sidebar />
+      <Sidebar mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
 
       <div className="relative flex min-w-0 flex-1 flex-col">
-        <Header />
+        <Header
+          mobileNavOpen={mobileNavOpen}
+          onMenuToggle={() => setMobileNavOpen((open) => !open)}
+        />
 
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>

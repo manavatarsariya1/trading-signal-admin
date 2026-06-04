@@ -1,17 +1,12 @@
 import type { ApiBlogDocument, Blog } from '../types/blog'
 
-const BLOG_ASSET_BASE =
-  import.meta.env.VITE_BLOG_PUBLIC_URL ??
-  import.meta.env.VITE_BLOGS_PROXY_TARGET ??
-  'https://www.tradingsignals.ai'
-
 export function resolveBlogCoverUrl(coverImage?: string): string | undefined {
   const value = coverImage?.trim()
   if (!value) return undefined
   if (/^https?:\/\//i.test(value)) return value
   if (value.startsWith('//')) return `https:${value}`
-  const base = BLOG_ASSET_BASE.replace(/\/$/, '')
-  return value.startsWith('/') ? `${base}${value}` : `${base}/${value}`
+  if (value.startsWith('/')) return value
+  return `/${value}`
 }
 
 function formatDate(value?: string): string {

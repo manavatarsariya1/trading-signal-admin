@@ -10,12 +10,16 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [devResetUrl, setDevResetUrl] = useState<string | null>(null)
+  const [devUserFound, setDevUserFound] = useState<boolean | null>(null)
+  const [emailSent, setEmailSent] = useState<boolean | null>(null)
   const [isSuccess, setIsSuccess] = useState(false)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
     setDevResetUrl(null)
+    setDevUserFound(null)
+    setEmailSent(null)
 
     const trimmed = email.trim()
     if (!trimmed) {
@@ -29,6 +33,12 @@ export default function ForgotPassword() {
 
     try {
       const result = await forgotPassword({ email: trimmed }).unwrap()
+      if (typeof result.userFound === 'boolean') {
+        setDevUserFound(result.userFound)
+      }
+      if (typeof result.emailSent === 'boolean') {
+        setEmailSent(result.emailSent)
+      }
       if (result.resetUrl) {
         setDevResetUrl(result.resetUrl)
       }
@@ -51,14 +61,38 @@ export default function ForgotPassword() {
           </p>
         }
       >
-        <div className="rounded-lg border border-tsai-accent-cyan/30 bg-tsai-accent/10 px-4 py-3 text-sm text-tsai-muted">
-          A reset link was sent to <span className="font-medium text-tsai-text">{email}</span>.
-          Open the link in the email to set a new password.
-        </div>
+        {devUserFound === false ? (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            No admin account uses <span className="font-medium">{email}</span>. Use the exact email you
+            sign in with (for example <span className="font-medium">admin@yopmail.com</span>).
+          </div>
+        ) : (
+          <div className="rounded-lg border border-tsai-accent-cyan/30 bg-tsai-accent/10 px-4 py-3 text-sm text-tsai-muted">
+            {emailSent
+              ? 'We emailed a reset link to'
+              : 'If sending is configured, a reset link was requested for'}{' '}
+            <span className="font-medium text-tsai-text">{email}</span>.
+            {emailSent ? ' Check inbox and spam.' : null}
+            {email?.includes('yopmail.com') ? (
+              <span className="mt-2 block text-xs text-tsai-subtle">
+                Yopmail: open{' '}
+                <a
+                  href={`https://yopmail.com/?${email.split('@')[0]}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-tsai-accent-cyan hover:underline"
+                >
+                  yopmail.com
+                </a>{' '}
+                and enter your inbox name to read the message.
+              </span>
+            ) : null}
+          </div>
+        )}
 
         {devResetUrl ? (
           <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-100">
-            <p className="font-medium">Development reset link:</p>
+            <p className="font-medium">Development reset link (also use if email did not arrive):</p>
             <a href={devResetUrl} className="mt-1 break-all text-tsai-accent-cyan hover:underline">
               {devResetUrl}
             </a>
@@ -74,6 +108,8 @@ export default function ForgotPassword() {
               setIsSuccess(false)
               setError('')
               setDevResetUrl(null)
+              setDevUserFound(null)
+              setEmailSent(null)
             }}
           >
             Try again

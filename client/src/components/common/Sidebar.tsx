@@ -1,5 +1,15 @@
-import { LayoutDashboard, FileText, Users, Settings2, WandSparkles, type LucideIcon } from 'lucide-react'
+import { useEffect } from 'react'
+import {
+  LayoutDashboard,
+  FileText,
+  Users,
+  Settings2,
+  WandSparkles,
+  X,
+  type LucideIcon,
+} from 'lucide-react'
 import { NavLink } from 'react-router-dom'
+import { cn } from '@/lib/utils'
 
 const SITE_URL = 'https://www.tradingsignals.ai'
 
@@ -7,10 +17,11 @@ type SidebarItemProps = {
   to: string
   label: string
   icon: LucideIcon
+  onNavigate?: () => void
 }
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
+  `group flex cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
     isActive
       ? 'border border-tsai-accent-cyan/25 bg-linear-to-r from-tsai-accent/25 to-tsai-accent-cyan/10 text-tsai-text shadow-[0_0_24px_rgba(18,215,245,0.08)]'
       : 'border border-transparent text-tsai-muted hover:border-white/8 hover:bg-white/5 hover:text-tsai-text'
@@ -30,9 +41,9 @@ function NavIcon({ children, active }: { children: React.ReactNode; active?: boo
   )
 }
 
-function SidebarItem({ to, label, icon: Icon }: SidebarItemProps) {
+function SidebarItem({ to, label, icon: Icon, onNavigate }: SidebarItemProps) {
   return (
-    <NavLink to={to} className={linkClass}>
+    <NavLink to={to} className={linkClass} onClick={onNavigate}>
       {({ isActive }) => (
         <>
           <NavIcon active={isActive}>
@@ -45,38 +56,62 @@ function SidebarItem({ to, label, icon: Icon }: SidebarItemProps) {
   )
 }
 
-export default function Sidebar() {
+type SidebarContentProps = {
+  onNavigate?: () => void
+  showClose?: boolean
+  onClose?: () => void
+}
+
+function SidebarContent({ onNavigate, showClose, onClose }: SidebarContentProps) {
+  const externalLinkClass =
+    'group flex cursor-pointer items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-sm font-medium text-tsai-muted transition hover:border-white/8 hover:bg-white/5 hover:text-tsai-text'
+
   return (
-    <aside className="relative z-10 hidden w-64 shrink-0 flex-col border-r border-white/8 bg-tsai-surface/90 backdrop-blur-xl lg:flex">
-      <div className="border-b border-white/8 px-5 py-6">
-        <a href={SITE_URL} target="_blank" rel="noopener noreferrer" className="inline-block">
-          <img
-            src="/logofi.svg"
-            alt="Trading Signals AI"
-            width={140}
-            height={32}
-            className="h-8 w-auto"
-          />
-        </a>
-        <p className="mt-3 text-[10px] font-medium tracking-[0.18em] text-tsai-accent-cyan uppercase">
-          Admin Panel
-        </p>
+    <>
+      <div className="flex items-start justify-between gap-3 border-b border-white/8 px-5 py-6">
+        <div className="min-w-0">
+          <a
+            href={SITE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block"
+            onClick={onNavigate}
+          >
+            <img
+              src="/logofi.svg"
+              alt="Trading Signals AI"
+              width={140}
+              height={32}
+              className="h-8 w-auto"
+            />
+          </a>
+          <p className="mt-3 text-[10px] font-medium tracking-[0.18em] text-tsai-accent-cyan uppercase">
+            Admin Panel
+          </p>
+        </div>
+        {showClose && onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-white/10 text-tsai-muted transition hover:border-white/20 hover:bg-white/5 hover:text-tsai-text"
+            aria-label="Close menu"
+          >
+            <X className="h-5 w-5" strokeWidth={2} />
+          </button>
+        ) : null}
       </div>
 
-      <nav className="flex-1 space-y-1 p-4">
-        <SidebarItem to="/admin/dashboard" label="Dashboard" icon={LayoutDashboard} />
-
-        <SidebarItem to="/admin/blogs" label="All Blogs" icon={FileText} />
-
-        <SidebarItem to="/admin/users" label="Users" icon={Users} />
-
-        <SidebarItem to="/admin/settings" label="Settings" icon={Settings2} />
-
+      <nav className="flex-1 space-y-1 overflow-y-auto p-4">
+        <SidebarItem to="/admin/dashboard" label="Dashboard" icon={LayoutDashboard} onNavigate={onNavigate} />
+        <SidebarItem to="/admin/blogs" label="All Blogs" icon={FileText} onNavigate={onNavigate} />
+        <SidebarItem to="/admin/users" label="Users" icon={Users} onNavigate={onNavigate} />
+        <SidebarItem to="/admin/settings" label="Settings" icon={Settings2} onNavigate={onNavigate} />
         <a
           href={`${SITE_URL}/generate-blogs`}
           target="_blank"
           rel="noopener noreferrer"
-          className="group flex items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-sm font-medium text-tsai-muted transition hover:border-white/8 hover:bg-white/5 hover:text-tsai-text"
+          className={externalLinkClass}
+          onClick={onNavigate}
         >
           <NavIcon>
             <WandSparkles className="h-4 w-4" strokeWidth={2.25} />
@@ -95,12 +130,74 @@ export default function Sidebar() {
             href={SITE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-3 inline-block text-xs font-medium text-tsai-accent-cyan hover:underline"
+            className="mt-3 inline-block cursor-pointer text-xs font-medium text-tsai-accent-cyan hover:underline"
+            onClick={onNavigate}
           >
             tradingsignals.ai →
           </a>
         </div>
       </div>
-    </aside>
+    </>
+  )
+}
+
+const sidebarPanelClass =
+  'relative z-50 flex w-[min(16rem,85vw)] max-w-64 shrink-0 flex-col border-r border-white/8 bg-tsai-surface/95 backdrop-blur-xl'
+
+type SidebarProps = {
+  mobileOpen: boolean
+  onMobileClose: () => void
+}
+
+export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
+  useEffect(() => {
+    if (!mobileOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onMobileClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [mobileOpen, onMobileClose])
+
+  return (
+    <>
+      {/* Desktop */}
+      <aside className={cn(sidebarPanelClass, 'hidden lg:flex')}>
+        <SidebarContent />
+      </aside>
+
+      {/* Mobile backdrop */}
+      <button
+        type="button"
+        aria-label="Close menu"
+        className={cn(
+          'fixed inset-0 z-40 cursor-pointer bg-[#010B24]/75 backdrop-blur-sm transition-opacity lg:hidden',
+          mobileOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
+        )}
+        onClick={onMobileClose}
+        tabIndex={mobileOpen ? 0 : -1}
+      />
+
+      {/* Mobile drawer */}
+      <aside
+        id="admin-mobile-nav"
+        aria-hidden={!mobileOpen}
+        className={cn(
+          sidebarPanelClass,
+          'fixed inset-y-0 left-0 transition-transform duration-300 ease-out lg:hidden',
+          mobileOpen ? 'translate-x-0' : 'pointer-events-none -translate-x-full',
+        )}
+      >
+        <SidebarContent showClose onClose={onMobileClose} onNavigate={onMobileClose} />
+      </aside>
+    </>
   )
 }
