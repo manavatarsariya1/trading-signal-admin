@@ -2,10 +2,14 @@ import type { Request } from 'express'
 import { AppError } from './AppError.js'
 import { HttpStatus } from '../constants/httpStatus.js'
 
+import type { BlogStatus } from '../constants/blogStatus.js'
+import { isBlogStatus } from '../constants/blogStatus.js'
+
 export type ParsedBlogBody = {
   title?: string
   content?: string
   coverImage?: string
+  status?: BlogStatus
 }
 
 export type ParsedBlogRequest = {
@@ -44,11 +48,14 @@ function getCoverImageFileFromMulter(req: Request): ParsedBlogRequest['coverImag
 export function buildParsedBlogFromRequest(req: Request): ParsedBlogRequest {
   const raw = req.body as Record<string, unknown>
 
+  const statusRaw = asOptionalString(raw.status)?.toLowerCase()
+
   return {
     body: {
       title: asOptionalString(raw.title),
       content: asOptionalString(raw.content),
       coverImage: asOptionalString(raw.coverImage),
+      status: statusRaw && isBlogStatus(statusRaw) ? statusRaw : undefined,
     },
     coverImageFile: getCoverImageFileFromMulter(req),
   }
@@ -80,11 +87,14 @@ export function parseBlogRequest(req: Request): ParsedBlogRequest {
 
   const raw = req.body as Record<string, unknown>
 
+  const statusRaw = asOptionalString(raw.status)?.toLowerCase()
+
   return {
     body: {
       title: asOptionalString(raw.title),
       content: asOptionalString(raw.content),
       coverImage: asOptionalString(raw.coverImage),
+      status: statusRaw && isBlogStatus(statusRaw) ? statusRaw : undefined,
     },
   }
 }

@@ -2,9 +2,11 @@ import app from './app.js'
 import { connectDatabase } from './config/database.js'
 import { env } from './config/env.js'
 import { ensureDefaultAdmin } from './services/auth.service.js'
+import { migrateLegacyBlogStatuses } from './services/blogMigration.service.js'
 
 async function bootstrap() {
   await connectDatabase()
+  await migrateLegacyBlogStatuses()
   await ensureDefaultAdmin()
 
   app.listen(env.PORT, () => {

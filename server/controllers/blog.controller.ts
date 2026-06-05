@@ -26,17 +26,37 @@ function parseSearchQuery(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined
 }
 
+function parseStatusQuery(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined
+  const trimmed = value.trim().toLowerCase()
+  return trimmed.length > 0 ? trimmed : undefined
+}
+
 export async function listBlogs(req: Request, res: Response): Promise<void> {
   const page = parsePage(req.query.page, 1)
   const limit = parsePage(req.query.limit, 12)
   const search = parseSearchQuery(req.query.search)
+  const status = parseStatusQuery(req.query.status)
 
-  const result = await blogService.listBlogs(page, limit, search)
+  const result = await blogService.listBlogs(page, limit, search, status)
   sendSuccess(res, result, 'Blogs loaded')
+}
+
+export async function listPublicBlogs(req: Request, res: Response): Promise<void> {
+  const page = parsePage(req.query.page, 1)
+  const limit = parsePage(req.query.limit, 12)
+
+  const result = await blogService.listPublicBlogs(page, limit)
+  sendSuccess(res, result, 'Published blogs loaded')
 }
 
 export async function getBlog(req: Request, res: Response): Promise<void> {
   const blog = await blogService.getBlogByIdentifier(getRouteIdentifier(req))
+  sendSuccess(res, blog, 'Blog loaded')
+}
+
+export async function getPublicBlog(req: Request, res: Response): Promise<void> {
+  const blog = await blogService.getPublicBlogByIdentifier(getRouteIdentifier(req))
   sendSuccess(res, blog, 'Blog loaded')
 }
 
@@ -68,10 +88,6 @@ export async function createBlog(req: Request, res: Response): Promise<void> {
   }
 }
 
-/**
- * PUT /api/blogs/:slug
- * Cover on save: multipart file OR JSON/base64 data URL (same as POST).
- */
 export async function updateBlog(req: Request, res: Response): Promise<void> {
   try {
     const identifier = getRouteIdentifier(req)
@@ -102,9 +118,32 @@ export async function updateBlog(req: Request, res: Response): Promise<void> {
   }
 }
 
-/**
- * DELETE /api/blogs/:slug
- */
+export async function publishBlog(req: Request, res: Response): Promise<void> {
+  try {
+    const blog = await blogService.publishBlog(getRouteIdentifier(req))
+    sendSuccess(res, blog, 'Blog published')
+  } catch (error) {
+    if (error instanceof AppError) {
+      sendError(res, error.message, error.statusCode)
+      return
+    }
+    sendError(res, 'Failed to publish blog', HttpStatus.INTERNAL_SERVER_ERROR)
+  }
+}
+
+export async function archiveBlog(req: Request, res: Response): Promise<void> {
+  try {
+    const blog = await blogService.archiveBlog(getRouteIdentifier(req))
+    sendSuccess(res, blog, 'Blog archived')
+  } catch (error) {
+    if (error instanceof AppError) {
+      sendError(res, error.message, error.statusCode)
+      return
+    }
+    sendError(res, 'Failed to archive blog', HttpStatus.INTERNAL_SERVER_ERROR)
+  }
+}
+
 export async function deleteBlog(req: Request, res: Response): Promise<void> {
   try {
     const identifier = getRouteIdentifier(req)

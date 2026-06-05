@@ -5,7 +5,13 @@ import { resolveBlogCoverUrl } from '../../utils/mapBlog'
 type BlogCoverCellProps = {
   title: string
   coverImage?: string
+  size?: 'sm' | 'md'
 }
+
+const sizeClass = {
+  sm: 'h-11 w-14 rounded-lg',
+  md: 'h-[3.25rem] w-[4.5rem] rounded-xl',
+} as const
 
 function CoverPlaceholder() {
   return (
@@ -15,14 +21,15 @@ function CoverPlaceholder() {
   )
 }
 
-export default function BlogCoverCell({ title, coverImage }: BlogCoverCellProps) {
+export default function BlogCoverCell({ title, coverImage, size = 'md' }: BlogCoverCellProps) {
   const src = resolveBlogCoverUrl(coverImage)
   const [failed, setFailed] = useState(false)
+  const dim = sizeClass[size]
 
   if (!src || failed) {
     return (
       <div
-        className="h-[3.25rem] w-[4.5rem] shrink-0 overflow-hidden rounded-xl border border-white/10"
+        className={`${dim} shrink-0 overflow-hidden border border-white/10`}
         title="No cover image"
       >
         <CoverPlaceholder />
@@ -31,7 +38,7 @@ export default function BlogCoverCell({ title, coverImage }: BlogCoverCellProps)
   }
 
   return (
-    <div className="h-[3.25rem] w-[4.5rem] shrink-0 overflow-hidden rounded-xl border border-white/10 bg-tsai-surface">
+    <div className={`${dim} shrink-0 overflow-hidden border border-white/10 bg-tsai-surface`}>
       <img
         src={src}
         alt={title}

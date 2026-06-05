@@ -8,10 +8,14 @@ export default function BlogDateCell({ value }: BlogDateCellProps) {
   const { date, time } = splitFormattedDate(value)
 
   return (
-    <div className="flex flex-col gap-0.5 py-0.5">
-      <span className="text-xs leading-tight text-tsai-text/90 lg:text-sm">{date}</span>
+    <div className="flex flex-col gap-0.5 py-0.5 sm:flex-row sm:items-baseline sm:gap-1.5">
+      <span className="text-[11px] leading-tight text-tsai-text/90 sm:text-xs lg:text-sm">
+        {date}
+      </span>
       {time ? (
-        <span className="text-[10px] leading-tight text-tsai-subtle lg:text-xs">{time}</span>
+        <span className="text-[10px] leading-tight text-tsai-subtle sm:text-[11px] lg:text-xs">
+          {time}
+        </span>
       ) : null}
     </div>
   )

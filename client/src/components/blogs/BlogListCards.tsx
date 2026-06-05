@@ -31,7 +31,7 @@ export default function BlogListCards({
 
   return (
     <>
-      <ul className="flex flex-col gap-3 p-4 sm:p-6">
+      <ul className="flex flex-col gap-2.5 p-3 sm:gap-3 sm:p-5 lg:p-6">
         {blogs.map((blog) => (
           <li key={blog.id}>
             <BlogListCard blog={blog} />

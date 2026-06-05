@@ -29,12 +29,20 @@ export function validateBlogData(
   },
 ): string[] | null {
   const errors: string[] = []
+  const requestedStatus = typeof body.status === 'string' ? body.status.toLowerCase() : 'draft'
+  const requiresContent = !isUpdate && requestedStatus === 'published'
 
   if (
-    !isUpdate &&
+    requiresContent &&
     (!body.content || typeof body.content !== 'string' || body.content.trim() === '')
   ) {
     errors.push(describeContentField(body))
+  }
+
+  if (body.status !== undefined) {
+    if (typeof body.status !== 'string' || !['draft', 'published'].includes(body.status.toLowerCase())) {
+      errors.push('Status on create must be draft or published.')
+    }
   }
 
   if (body.title !== undefined) {

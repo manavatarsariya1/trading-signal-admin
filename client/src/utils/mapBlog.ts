@@ -1,4 +1,4 @@
-import type { ApiBlogDocument, Blog } from '../types/blog'
+import type { ApiBlogDocument, Blog, BlogStatus } from '../types/blog'
 
 export function resolveBlogCoverUrl(coverImage?: string): string | undefined {
   const value = coverImage?.trim()
@@ -22,6 +22,11 @@ function formatDate(value?: string): string {
   })
 }
 
+function normalizeStatus(value?: string): BlogStatus {
+  if (value === 'published' || value === 'archived') return value
+  return 'draft'
+}
+
 export function mapApiBlogToBlog(raw: ApiBlogDocument): Blog {
   const id = String(raw._id ?? raw.id ?? '')
   const title = raw.title?.trim() || 'Untitled'
@@ -38,6 +43,9 @@ export function mapApiBlogToBlog(raw: ApiBlogDocument): Blog {
     slug,
     content: raw.content?.trim() ?? '',
     coverImage: raw.coverImage?.trim() ?? '',
+    status: normalizeStatus(raw.status),
+    publishedAt: formatDate(raw.publishedAt),
+    archivedAt: formatDate(raw.archivedAt),
     createdAt: formatDate(raw.createdAt),
     updatedAt: formatDate(raw.updatedAt),
   }

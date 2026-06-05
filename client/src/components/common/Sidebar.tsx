@@ -2,8 +2,6 @@ import { useEffect } from 'react'
 import {
   LayoutDashboard,
   FileText,
-  Users,
-  Settings2,
   WandSparkles,
   X,
   type LucideIcon,
@@ -104,8 +102,8 @@ function SidebarContent({ onNavigate, showClose, onClose }: SidebarContentProps)
       <nav className="flex-1 space-y-1 overflow-y-auto p-4">
         <SidebarItem to="/admin/dashboard" label="Dashboard" icon={LayoutDashboard} onNavigate={onNavigate} />
         <SidebarItem to="/admin/blogs" label="All Blogs" icon={FileText} onNavigate={onNavigate} />
-        <SidebarItem to="/admin/users" label="Users" icon={Users} onNavigate={onNavigate} />
-        <SidebarItem to="/admin/settings" label="Settings" icon={Settings2} onNavigate={onNavigate} />
+        {/* <SidebarItem to="/admin/users" label="Users" icon={Users} onNavigate={onNavigate} /> */}
+        {/* <SidebarItem to="/admin/settings" label="Settings" icon={Settings2} onNavigate={onNavigate} /> */}
         <a
           href={`${SITE_URL}/generate-blogs`}
           target="_blank"
