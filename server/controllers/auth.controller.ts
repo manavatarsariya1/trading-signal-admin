@@ -38,7 +38,8 @@ export async function me(req: Request, res: Response): Promise<void> {
 
 export async function forgotPassword(req: Request, res: Response): Promise<void> {
   const { email } = req.body
-  const data = await authService.requestPasswordReset(email)
+  const requestOrigin = typeof req.headers.origin === 'string' ? req.headers.origin : undefined
+  const data = await authService.requestPasswordReset(email, requestOrigin)
   sendSuccess(res, data, data.message)
 }
 

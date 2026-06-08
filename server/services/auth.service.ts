@@ -77,16 +77,57 @@ export async function getProfile(userId: string) {
   return { user: toPublicUser(user) }
 }
 
-export async function requestPasswordReset(email: string) {
-  const user = await User.findOne({ email: email.toLowerCase().trim() })
-  const message = 'If that email exists, a reset link has been sent.'
+function normalizeClientUrl(url: string): string {
+  return url.trim().replace(/\/$/, '')
+}
+
+function resolveClientUrl(requestOrigin?: string): string {
+  const configured = normalizeClientUrl(env.CLIENT_URL)
+
+  if (requestOrigin) {
+    const origin = normalizeClientUrl(requestOrigin)
+    if (origin.startsWith('http://localhost:') || origin.endsWith('.vercel.app')) {
+      return origin
+    }
+  }
+
+  return configured
+}
+
+export async function requestPasswordReset(email: string, requestOrigin?: string) {
+  const normalizedEmail = email.toLowerCase().trim()
+  const user = await User.findOne({ email: normalizedEmail })
 
   if (!user) {
-    logger.warn(`[auth] Password reset requested for unknown email: ${email}`)
-    return {
-      message,
-      ...(env.NODE_ENV === 'development' ? { userFound: false, emailSent: false } : {}),
+    throw new AppError(
+      'No account is registered with this email address.',
+      HttpStatus.NOT_FOUND,
+    )
+  }
+
+  if (!isBrevoConfigured()) {
+    const resetToken = createPasswordResetToken()
+    user.passwordResetToken = hashToken(resetToken)
+    user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000)
+    await user.save({ validateBeforeSave: false })
+
+    const resetUrl = `${resolveClientUrl(requestOrigin)}/reset-password?token=${encodeURIComponent(resetToken)}`
+
+    if (env.NODE_ENV === 'development') {
+      console.log(`[auth] Password reset link (Brevo not configured): ${resetUrl}`)
+      return {
+        message: 'Reset link generated. Email is not configured in development.',
+        resetUrl,
+        emailSent: false,
+        userFound: true,
+        brevoConfigured: false,
+      }
     }
+
+    throw new AppError(
+      'Password reset email is not configured. Contact your administrator.',
+      HttpStatus.SERVICE_UNAVAILABLE,
+    )
   }
 
   const resetToken = createPasswordResetToken()
@@ -94,31 +135,32 @@ export async function requestPasswordReset(email: string) {
   user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000)
   await user.save({ validateBeforeSave: false })
 
-  const resetUrl = `${env.CLIENT_URL}/reset-password?token=${encodeURIComponent(resetToken)}`
+  const resetUrl = `${resolveClientUrl(requestOrigin)}/reset-password?token=${encodeURIComponent(resetToken)}`
 
-  let emailSent = false
   try {
-    emailSent = await sendPasswordResetEmail(user.email, resetUrl, user.name)
+    const emailSent = await sendPasswordResetEmail(user.email, resetUrl, user.name)
+    if (!emailSent) {
+      throw new AppError(
+        'Unable to send reset email. Please try again later.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      )
+    }
   } catch (error) {
     logger.error('[auth] Failed to send password reset email', error)
-    if (env.NODE_ENV === 'production') {
-      // Still return generic success (do not reveal whether email exists or send failed)
-      return { message }
-    }
     throw new AppError(
-      'Unable to send reset email. Check Brevo configuration and sender verification.',
+      error instanceof AppError
+        ? error.message
+        : 'Unable to send reset email. Check that your email address is valid and try again.',
       HttpStatus.INTERNAL_SERVER_ERROR,
     )
   }
 
-  if (!emailSent && env.NODE_ENV === 'development') {
-    console.log(`[auth] Password reset link (Brevo not configured): ${resetUrl}`)
-  }
-
   return {
-    message,
+    message: 'Password reset link sent. Check your inbox and spam folder.',
+    emailSent: true,
+    userFound: true,
     ...(env.NODE_ENV === 'development'
-      ? { resetUrl, emailSent, userFound: true, brevoConfigured: isBrevoConfigured() }
+      ? { resetUrl, brevoConfigured: true }
       : {}),
   }
 }

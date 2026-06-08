@@ -7,5 +7,6 @@ export const HttpStatus = {
   NOT_FOUND: 404,
   CONFLICT: 409,
   BAD_GATEWAY: 502,
+  SERVICE_UNAVAILABLE: 503,
   INTERNAL_SERVER_ERROR: 500,
 } as const
