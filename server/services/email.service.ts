@@ -55,6 +55,24 @@ function buildPasswordResetHtml(resetUrl: string, userName: string): string {
 `.trim()
 }
 
+function formatBrevoError(status: number, detail: string): string {
+  const lower = detail.toLowerCase()
+  if (
+    status === 401 &&
+    (lower.includes('unrecognised ip') ||
+      lower.includes('unrecognized ip') ||
+      lower.includes('authorised_ips') ||
+      lower.includes('authorized_ips'))
+  ) {
+    return (
+      'Brevo blocked the request from the server IP (Vercel). ' +
+      'In Brevo go to Security → Authorized IPs and either disable IP restriction ' +
+      'or allow cloud/serverless IPs. See https://app.brevo.com/security/authorised_ips'
+    )
+  }
+  return `Brevo rejected the email (${status}): ${detail}`
+}
+
 export async function sendPasswordResetEmail(
   toEmail: string,
   resetUrl: string,
@@ -94,7 +112,7 @@ export async function sendPasswordResetEmail(
       /* keep raw body */
     }
     logger.error(`[email] Brevo API error (${response.status}): ${detail}`)
-    throw new Error(`Brevo rejected the email (${response.status}): ${detail}`)
+    throw new Error(formatBrevoError(response.status, detail))
   }
 
   logger.info(`[email] Password reset email sent to ${toEmail}`)
