@@ -6,7 +6,19 @@ import {
 } from '@reduxjs/toolkit/query'
 import { clearAccessToken, getAccessToken, setAccessToken } from '../../lib/authStorage'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
+function resolveApiBase(): string {
+  const raw = import.meta.env.VITE_API_BASE_URL ?? '/api'
+  const trimmed = raw.replace(/\/$/, '')
+
+  if (trimmed.startsWith('http') && !trimmed.endsWith('/api')) {
+    return `${trimmed}/api`
+  }
+
+  return trimmed || '/api'
+}
+
+const API_BASE = resolveApiBase()
+const VERCEL_PROTECTION_BYPASS = import.meta.env.VITE_VERCEL_PROTECTION_BYPASS?.trim()
 
 type ApiWrapper<T> = {
   success: boolean
@@ -27,6 +39,9 @@ const rawBaseQuery = fetchBaseQuery({
     const token = getAccessToken()
     if (token) {
       headers.set('Authorization', `Bearer ${token}`)
+    }
+    if (VERCEL_PROTECTION_BYPASS) {
+      headers.set('x-vercel-protection-bypass', VERCEL_PROTECTION_BYPASS)
     }
     return headers
   },

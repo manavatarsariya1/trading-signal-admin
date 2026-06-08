@@ -10,7 +10,7 @@ export function setRefreshCookie(res: Response, token: string, rememberMe: boole
   res.cookie(REFRESH_TOKEN_COOKIE, token, {
     httpOnly: true,
     secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge,
     path: '/api/auth',
   })

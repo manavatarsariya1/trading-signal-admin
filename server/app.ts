@@ -3,19 +3,32 @@ import cors from 'cors'
 import express from 'express'
 import helmet from 'helmet'
 import path from 'path'
-// import { env } from './config/env.js'
+import { ensureBootstrapped } from './bootstrap.js'
+import { corsOptions } from './config/cors.js'
 import { errorHandler } from './middlewares/errorHandler.js'
 import { notFound } from './middlewares/notFound.js'
 import apiRoutes from './routes/index.js'
 import dotenv from 'dotenv'
 
-dotenv.config();
-
+dotenv.config()
 
 const app = express()
 
-app.use(helmet())
-app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }))
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }),
+)
+app.use(cors(corsOptions))
+app.options('*', cors(corsOptions))
+app.use(async (_req, _res, next) => {
+  try {
+    await ensureBootstrapped()
+    next()
+  } catch (error) {
+    next(error)
+  }
+})
 app.use(cookieParser())
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
