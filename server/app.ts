@@ -21,7 +21,13 @@ app.use(
 )
 app.use(cors(corsOptions))
 app.options('*', cors(corsOptions))
-app.use(async (_req, _res, next) => {
+app.use(async (req, _res, next) => {
+  // Let CORS preflight through without waiting on MongoDB
+  if (req.method === 'OPTIONS') {
+    next()
+    return
+  }
+
   try {
     await ensureBootstrapped()
     next()

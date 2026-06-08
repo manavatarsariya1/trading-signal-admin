@@ -22,8 +22,8 @@ function collectExplicitOrigins(): Set<string> {
 
 const explicitOrigins = collectExplicitOrigins()
 
-const VERCEL_CLIENT_ORIGIN =
-  /^https:\/\/trading-signal-admin[a-z0-9-]*\.vercel\.app$/i
+/** Any Vercel preview/production URL for this team */
+const VERCEL_APP_ORIGIN = /^https:\/\/[\w-]+\.vercel\.app$/i
 
 function isAllowedOrigin(origin: string): boolean {
   const normalized = normalizeOrigin(origin)
@@ -33,7 +33,7 @@ function isAllowedOrigin(origin: string): boolean {
   }
 
   const allowPreviews = process.env.CORS_ALLOW_VERCEL_PREVIEWS !== 'false'
-  if (allowPreviews && VERCEL_CLIENT_ORIGIN.test(normalized)) {
+  if (allowPreviews && VERCEL_APP_ORIGIN.test(normalized)) {
     return true
   }
 
