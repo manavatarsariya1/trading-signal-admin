@@ -1,5 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
+import cors from 'cors'
 import { ZodError } from 'zod'
+import { corsOptions } from '../config/cors.js'
 import { env } from '../config/env.js'
 import { HttpStatus } from '../constants/httpStatus.js'
 import { AppError } from '../utils/AppError.js'
@@ -8,10 +10,16 @@ import { sendError } from '../utils/sendResponse.js'
 
 export function errorHandler(
   err: unknown,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction,
 ): void {
+  cors(corsOptions)(req, res, () => {
+    handleError(err, res)
+  })
+}
+
+function handleError(err: unknown, res: Response): void {
   if (err instanceof ZodError) {
     sendError(res, 'Validation failed', HttpStatus.BAD_REQUEST, err.flatten().fieldErrors)
     return

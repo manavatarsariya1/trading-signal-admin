@@ -22,8 +22,11 @@ function collectExplicitOrigins(): Set<string> {
 
 const explicitOrigins = collectExplicitOrigins()
 
-/** Any Vercel preview/production URL for this team */
+/** Any *.vercel.app deployment (preview + production) */
 const VERCEL_APP_ORIGIN = /^https:\/\/[\w-]+\.vercel\.app$/i
+
+/** Team-specific Vercel URLs */
+const VERCEL_TEAM_ORIGIN = /^https:\/\/[\w-]+-manav01logicgo-3215s-projects\.vercel\.app$/i
 
 function isAllowedOrigin(origin: string): boolean {
   const normalized = normalizeOrigin(origin)
@@ -33,7 +36,7 @@ function isAllowedOrigin(origin: string): boolean {
   }
 
   const allowPreviews = process.env.CORS_ALLOW_VERCEL_PREVIEWS !== 'false'
-  if (allowPreviews && VERCEL_APP_ORIGIN.test(normalized)) {
+  if (allowPreviews && (VERCEL_APP_ORIGIN.test(normalized) || VERCEL_TEAM_ORIGIN.test(normalized))) {
     return true
   }
 
@@ -57,5 +60,11 @@ export const corsOptions: CorsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-vercel-protection-bypass'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'x-vercel-protection-bypass',
+    'X-Requested-With',
+  ],
+  optionsSuccessStatus: 204,
 }
