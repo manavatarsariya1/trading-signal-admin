@@ -7,6 +7,11 @@ import {
 import { clearAccessToken, getAccessToken, setAccessToken } from '../../lib/authStorage'
 
 export function getApiBase(): string {
+  // Vercel client deploy: same-origin /api → middleware.ts proxies to server (no CORS)
+  if (typeof window !== 'undefined' && /\.vercel\.app$/i.test(window.location.hostname)) {
+    return '/api'
+  }
+
   const raw = import.meta.env.VITE_API_BASE_URL ?? '/api'
   const trimmed = raw.replace(/\/$/, '')
 
@@ -32,11 +37,6 @@ function getRawBaseQuery() {
         const token = getAccessToken()
         if (token) {
           headers.set('Authorization', `Bearer ${token}`)
-        }
-
-        const bypass = import.meta.env.VITE_VERCEL_PROTECTION_BYPASS?.trim()
-        if (bypass) {
-          headers.set('x-vercel-protection-bypass', bypass)
         }
 
         return headers
