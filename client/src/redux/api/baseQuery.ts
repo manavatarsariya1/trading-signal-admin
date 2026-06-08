@@ -6,7 +6,15 @@ import {
 } from '@reduxjs/toolkit/query'
 import { clearAccessToken, getAccessToken, setAccessToken } from '../../lib/authStorage'
 
-function resolveApiBase(): string {
+/**
+ * On Vercel client hosts, always use same-origin /api (proxied by client/vercel.json).
+ * Avoids CORS + OPTIONS preflight issues with cross-origin preview URLs.
+ */
+export function getApiBase(): string {
+  if (typeof window !== 'undefined' && /\.vercel\.app$/i.test(window.location.hostname)) {
+    return '/api'
+  }
+
   const raw = import.meta.env.VITE_API_BASE_URL ?? '/api'
   const trimmed = raw.replace(/\/$/, '')
 
@@ -17,8 +25,39 @@ function resolveApiBase(): string {
   return trimmed || '/api'
 }
 
-const API_BASE = resolveApiBase()
-const VERCEL_PROTECTION_BYPASS = import.meta.env.VITE_VERCEL_PROTECTION_BYPASS?.trim()
+function usesCrossOriginApi(): boolean {
+  return getApiBase().startsWith('http')
+}
+
+let cachedBaseUrl = ''
+let cachedRawBaseQuery: ReturnType<typeof fetchBaseQuery> | null = null
+
+function getRawBaseQuery() {
+  const baseUrl = getApiBase()
+
+  if (baseUrl !== cachedBaseUrl || !cachedRawBaseQuery) {
+    cachedBaseUrl = baseUrl
+    cachedRawBaseQuery = fetchBaseQuery({
+      baseUrl,
+      credentials: 'include',
+      prepareHeaders: (headers) => {
+        const token = getAccessToken()
+        if (token) {
+          headers.set('Authorization', `Bearer ${token}`)
+        }
+
+        const bypass = import.meta.env.VITE_VERCEL_PROTECTION_BYPASS?.trim()
+        if (bypass && usesCrossOriginApi()) {
+          headers.set('x-vercel-protection-bypass', bypass)
+        }
+
+        return headers
+      },
+    })
+  }
+
+  return cachedRawBaseQuery
+}
 
 type ApiWrapper<T> = {
   success: boolean
@@ -31,21 +70,6 @@ type QueryError = {
   status: number | 'FETCH_ERROR' | 'CUSTOM_ERROR'
   data: { message: string; errors?: Record<string, string[] | undefined> }
 }
-
-const rawBaseQuery = fetchBaseQuery({
-  baseUrl: API_BASE,
-  credentials: 'include',
-  prepareHeaders: (headers) => {
-    const token = getAccessToken()
-    if (token) {
-      headers.set('Authorization', `Bearer ${token}`)
-    }
-    if (VERCEL_PROTECTION_BYPASS) {
-      headers.set('x-vercel-protection-bypass', VERCEL_PROTECTION_BYPASS)
-    }
-    return headers
-  },
-})
 
 function unwrapResponse<T>(result: { data?: unknown; error?: FetchBaseQueryError }): {
   data?: T
@@ -86,6 +110,7 @@ export const baseQueryWithAuth: BaseQueryFn<
   unknown,
   QueryError
 > = async (args, api, extraOptions) => {
+  const rawBaseQuery = getRawBaseQuery()
   let result = await rawBaseQuery(args, api, extraOptions)
   let unwrapped = unwrapResponse(result)
 

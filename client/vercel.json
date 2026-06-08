@@ -5,7 +5,7 @@
       "destination": "https://trading-signal-admin-2spf-dhcc0pg03.vercel.app/api/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api).*)",
       "destination": "/index.html"
     }
   ]
