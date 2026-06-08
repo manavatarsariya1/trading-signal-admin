@@ -6,15 +6,7 @@ import {
 } from '@reduxjs/toolkit/query'
 import { clearAccessToken, getAccessToken, setAccessToken } from '../../lib/authStorage'
 
-/**
- * On Vercel client hosts, always use same-origin /api (proxied by client/vercel.json).
- * Avoids CORS + OPTIONS preflight issues with cross-origin preview URLs.
- */
 export function getApiBase(): string {
-  if (typeof window !== 'undefined' && /\.vercel\.app$/i.test(window.location.hostname)) {
-    return '/api'
-  }
-
   const raw = import.meta.env.VITE_API_BASE_URL ?? '/api'
   const trimmed = raw.replace(/\/$/, '')
 
@@ -23,10 +15,6 @@ export function getApiBase(): string {
   }
 
   return trimmed || '/api'
-}
-
-function usesCrossOriginApi(): boolean {
-  return getApiBase().startsWith('http')
 }
 
 let cachedBaseUrl = ''
@@ -47,7 +35,7 @@ function getRawBaseQuery() {
         }
 
         const bypass = import.meta.env.VITE_VERCEL_PROTECTION_BYPASS?.trim()
-        if (bypass && usesCrossOriginApi()) {
+        if (bypass) {
           headers.set('x-vercel-protection-bypass', bypass)
         }
 
