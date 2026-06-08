@@ -9,15 +9,11 @@ export default function ForgotPassword() {
   const [forgotPassword, { isLoading: isSubmitting }] = useForgotPasswordMutation()
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
-  const [devResetUrl, setDevResetUrl] = useState<string | null>(null)
-  const [emailWarning, setEmailWarning] = useState<string | null>(null)
   const [isSuccess, setIsSuccess] = useState(false)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
-    setDevResetUrl(null)
-    setEmailWarning(null)
 
     const trimmed = email.trim()
     if (!trimmed) {
@@ -30,13 +26,7 @@ export default function ForgotPassword() {
     }
 
     try {
-      const result = await forgotPassword({ email: trimmed }).unwrap()
-      if (result.resetUrl) {
-        setDevResetUrl(result.resetUrl)
-      }
-      if (result.emailError) {
-        setEmailWarning(result.emailError)
-      }
+      await forgotPassword({ email: trimmed }).unwrap()
       setIsSuccess(true)
     } catch (err) {
       setError(getApiErrorMessage(err, 'Unable to send reset link'))
@@ -57,17 +47,8 @@ export default function ForgotPassword() {
         }
       >
         <div className="rounded-lg border border-tsai-accent-cyan/30 bg-tsai-accent/10 px-4 py-3 text-sm text-tsai-muted">
-          {emailWarning ? (
-            <>
-              <span className="font-medium text-amber-200">Email could not be delivered.</span>{' '}
-              {devResetUrl ? 'Use the reset link below instead.' : 'See details below.'}
-            </>
-          ) : (
-            <>
-              A reset link was sent to <span className="font-medium text-tsai-text">{email}</span>.
-              Check your inbox and spam folder.
-            </>
-          )}
+          A reset link was sent to <span className="font-medium text-tsai-text">{email}</span>.
+          Check your inbox and spam folder.
           {email.includes('yopmail.com') ? (
             <span className="mt-2 block text-xs text-tsai-subtle">
               Yopmail: open{' '}
@@ -84,22 +65,6 @@ export default function ForgotPassword() {
           ) : null}
         </div>
 
-        {emailWarning ? (
-          <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-100">
-            <p className="font-medium">Email provider error:</p>
-            <p className="mt-1 break-words">{emailWarning}</p>
-          </div>
-        ) : null}
-
-        {devResetUrl ? (
-          <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-100">
-            <p className="font-medium">Reset link (use if email did not arrive):</p>
-            <a href={devResetUrl} className="mt-1 break-all text-tsai-accent-cyan hover:underline">
-              {devResetUrl}
-            </a>
-          </div>
-        ) : null}
-
         <p className="mt-4 text-center text-xs text-tsai-subtle">
           Did not receive it?{' '}
           <button
@@ -108,9 +73,6 @@ export default function ForgotPassword() {
             onClick={() => {
               setIsSuccess(false)
               setError('')
-              setDevResetUrl(null)
-              setEmailWarning(null)
-    setEmailWarning(null)
             }}
           >
             Try again

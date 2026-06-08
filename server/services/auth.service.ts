@@ -81,19 +81,6 @@ function normalizeClientUrl(url: string): string {
   return url.trim().replace(/\/$/, '')
 }
 
-function isLocalClientOrigin(origin?: string): boolean {
-  if (!origin) return false
-  const normalized = origin.trim().toLowerCase()
-  return (
-    normalized.startsWith('http://localhost:') ||
-    normalized.startsWith('http://127.0.0.1:')
-  )
-}
-
-function shouldReturnResetLinkFallback(requestOrigin?: string): boolean {
-  return env.NODE_ENV === 'development' || isLocalClientOrigin(requestOrigin)
-}
-
 function resolveClientUrl(requestOrigin?: string): string {
   const configured = normalizeClientUrl(env.CLIENT_URL)
 
@@ -119,24 +106,6 @@ export async function requestPasswordReset(email: string, requestOrigin?: string
   }
 
   if (!isBrevoConfigured()) {
-    const resetToken = createPasswordResetToken()
-    user.passwordResetToken = hashToken(resetToken)
-    user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000)
-    await user.save({ validateBeforeSave: false })
-
-    const resetUrl = `${resolveClientUrl(requestOrigin)}/reset-password?token=${encodeURIComponent(resetToken)}`
-
-    if (env.NODE_ENV === 'development') {
-      console.log(`[auth] Password reset link (Brevo not configured): ${resetUrl}`)
-      return {
-        message: 'Reset link generated. Email is not configured in development.',
-        resetUrl,
-        emailSent: false,
-        userFound: true,
-        brevoConfigured: false,
-      }
-    }
-
     throw new AppError(
       'Password reset email is not configured. Contact your administrator.',
       HttpStatus.SERVICE_UNAVAILABLE,
@@ -168,26 +137,12 @@ export async function requestPasswordReset(email: string, requestOrigin?: string
           ? error.message
           : 'Unable to send reset email. Please try again later.'
 
-    if (shouldReturnResetLinkFallback(requestOrigin)) {
-      return {
-        message: 'Email could not be sent. Use the reset link below.',
-        resetUrl,
-        emailSent: false,
-        userFound: true,
-        emailError: detail,
-      }
-    }
-
     throw new AppError(detail, HttpStatus.INTERNAL_SERVER_ERROR)
   }
 
   return {
     message: 'Password reset link sent. Check your inbox and spam folder.',
     emailSent: true,
-    userFound: true,
-    ...(env.NODE_ENV === 'development'
-      ? { resetUrl, brevoConfigured: true }
-      : {}),
   }
 }
 
