@@ -22,7 +22,8 @@ app.use(
 
 const whitelist = [
   'http://localhost:3000', // For local development
-  'https://your-main-production-domain.com' // Your main production domain
+  'https://trading-signal-admin-git-devmanav-manav01logicgo-3215s-projects.vercel.app/',
+  "https://trading-signal-admin-23cej47z7-manav01logicgo-3215s-projects.vercel.app/" // Your main production domain
 ];
 
 const corsOptions = {
