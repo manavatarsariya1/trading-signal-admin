@@ -5,8 +5,8 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
   API_PUBLIC_URL: z.string().url().optional(),
-  CORS_ORIGIN: z.string().default('http://localhost:5173'),
-  CLIENT_URL: z.string().default('http://localhost:5173'),
+  CORS_ORIGIN: z.string().default('https://trading-signal-admin-6tr1nyxam-manav01logicgo-3215s-projects.vercel.app/'),
+  CLIENT_URL: z.string().default('https://trading-signal-admin-6tr1nyxam-manav01logicgo-3215s-projects.vercel.app/'),
   DB_URI: z
     .string()
     .min(1)
