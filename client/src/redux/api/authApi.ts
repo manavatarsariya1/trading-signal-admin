@@ -64,6 +64,7 @@ export const authApi = createApi({
         resetUrl?: string
         emailSent?: boolean
         userFound?: boolean
+        emailError?: string
         brevoConfigured?: boolean
       },
       { email: string }

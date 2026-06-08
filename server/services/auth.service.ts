@@ -81,6 +81,19 @@ function normalizeClientUrl(url: string): string {
   return url.trim().replace(/\/$/, '')
 }
 
+function isLocalClientOrigin(origin?: string): boolean {
+  if (!origin) return false
+  const normalized = origin.trim().toLowerCase()
+  return (
+    normalized.startsWith('http://localhost:') ||
+    normalized.startsWith('http://127.0.0.1:')
+  )
+}
+
+function shouldReturnResetLinkFallback(requestOrigin?: string): boolean {
+  return env.NODE_ENV === 'development' || isLocalClientOrigin(requestOrigin)
+}
+
 function resolveClientUrl(requestOrigin?: string): string {
   const configured = normalizeClientUrl(env.CLIENT_URL)
 
@@ -147,12 +160,25 @@ export async function requestPasswordReset(email: string, requestOrigin?: string
     }
   } catch (error) {
     logger.error('[auth] Failed to send password reset email', error)
-    throw new AppError(
+
+    const detail =
       error instanceof AppError
         ? error.message
-        : 'Unable to send reset email. Check that your email address is valid and try again.',
-      HttpStatus.INTERNAL_SERVER_ERROR,
-    )
+        : error instanceof Error
+          ? error.message
+          : 'Unable to send reset email. Please try again later.'
+
+    if (shouldReturnResetLinkFallback(requestOrigin)) {
+      return {
+        message: 'Email could not be sent. Use the reset link below.',
+        resetUrl,
+        emailSent: false,
+        userFound: true,
+        emailError: detail,
+      }
+    }
+
+    throw new AppError(detail, HttpStatus.INTERNAL_SERVER_ERROR)
   }
 
   return {

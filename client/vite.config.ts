@@ -34,6 +34,12 @@ function onlyDotEnvPlugin(root: string): Plugin {
 }
 
 function getProxyTarget(env: Record<string, string>): string {
+  const useRemote = env.VITE_USE_REMOTE_API === 'true'
+
+  if (!useRemote) {
+    return 'http://localhost:3000'
+  }
+
   const explicit = env.VITE_API_PROXY_TARGET?.trim()
   if (explicit) {
     return explicit.replace(/\/$/, '')
